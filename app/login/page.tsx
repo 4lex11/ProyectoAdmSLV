@@ -1,8 +1,9 @@
 "use client";
-
+import { login } from "@/services/auth.service";
 import { useState } from "react";
 import { Eye, EyeOff, ArrowRight, Zap } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -10,25 +11,26 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
+  
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError("");
+  setIsLoading(true);
 
-    // Simulate login
-    setTimeout(() => {
-      if (!email || !password) {
-        setError("Please fill in all fields");
-      } else if (!email.includes("@")) {
-        setError("Please enter a valid email");
-      } else {
-        console.log("Login attempt:", { email, password });
-        // In a real app, handle authentication here
-      }
-      setIsLoading(false);
-    }, 500);
-  };
+  const { data, error } = await login(email, password);
+
+  if (error) {
+    setError(error.message);
+  } else {
+    console.log("Login correcto:", data);
+
+    router.replace("/chatmtpe");
+  }
+
+  setIsLoading(false);
+};
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
