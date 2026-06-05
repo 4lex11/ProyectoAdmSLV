@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { Section } from "@/app/page";
+import type { Section } from "@/app/dashboard/page";
 import {
   LayoutDashboard,
   AlertTriangle,

@@ -26,7 +26,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   } else {
     console.log("Login correcto:", data);
 
-    router.replace("/chatmtpe");
+    router.replace("/dashboard");
   }
 
   setIsLoading(false);

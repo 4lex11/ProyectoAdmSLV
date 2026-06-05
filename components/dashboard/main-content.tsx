@@ -1,6 +1,6 @@
 "use client";
 
-import type { Section } from "@/app/page";
+import type { Section } from "@/app/dashboard/page";
 import { OverviewContent } from "./content/overview-content";
 import { IncidentsContent } from "./content/incidents-content";
 import { DeploymentsContent } from "./content/deployments-content";
