@@ -95,40 +95,13 @@ export function MainContent({ activeSection }: MainContentProps) {
     <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
       {/* Header */}
       <header className="h-16 px-8 flex items-center justify-between border-b border-border bg-card shrink-0">
-        <div>
-          <h1 className="text-lg font-semibold text-foreground tracking-tight">
-            {config.title}
-          </h1>
-          <p className="text-sm text-muted-foreground">{config.subtitle}</p>
-        </div>
+        <div></div>
 
         <div className="flex items-center gap-3">
-          {/* Time Range */}
-          <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-            <Calendar className="w-4 h-4" />
-            <span>Last 24 hours</span>
-          </Button>
-
-          {/* Refresh */}
-          <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-            <RefreshCw className="w-4 h-4" />
-            <span>Refresh</span>
-          </Button>
-
-          {/* Alerts */}
-          <button
-            type="button"
-            className="relative p-2 rounded-xl hover:bg-muted transition-colors"
-            aria-label="Alerts"
-          >
-            <Bell className="w-5 h-5 text-muted-foreground" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full animate-pulse" />
-          </button>
-
           {/* Primary Action */}
           <Button size="sm" className="gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground">
             <AlertCircle className="w-4 h-4" />
-            <span>Report Incident</span>
+            <span>Cerrar Sesion</span>
           </Button>
         </div>
       </header>

@@ -31,8 +31,7 @@ export default function DashboardPage() {
       {/* Main Content */}
       <MainContent activeSection={activeSection} />
       
-      {/* Right Panel */}
-      <RightPanel />
+      {/* Right Panel <RightPanel />*/}
     </div>
   );
 }

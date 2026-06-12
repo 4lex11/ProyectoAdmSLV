@@ -41,7 +41,7 @@ const latencyData = [
 
 const metrics = [
   {
-    label: "Active Incidents",
+    label: "Chats Terminados",
     value: "3",
     change: "+2",
     trend: "up",
@@ -50,7 +50,7 @@ const metrics = [
     bgColor: "bg-destructive/10",
   },
   {
-    label: "Deployments Today",
+    label: "Chats Solucionados",
     value: "8",
     change: "+3",
     trend: "up",
@@ -59,7 +59,7 @@ const metrics = [
     bgColor: "bg-chart-1/10",
   },
   {
-    label: "Error Rate",
+    label: "Chats sin Solucion",
     value: "0.42%",
     change: "-0.12%",
     trend: "down",
@@ -68,7 +68,7 @@ const metrics = [
     bgColor: "bg-success/10",
   },
   {
-    label: "Uptime (30d)",
+    label: "Problemas Reportados",
     value: "99.98%",
     change: "+0.01%",
     trend: "up",

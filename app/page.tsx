@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Send, Plus, Search, ArrowLeft, Shield } from 'lucide-react';
 
 interface System {
@@ -123,11 +124,7 @@ const ChatbotSoporte: React.FC = () => {
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="bg-white rounded px-3 py-1">
-                <div className="text-sm font-bold text-red-600">🇵🇪 PERÚ</div>
-              </div>
-              <div className="border-l-2 border-white/30 pl-4">
-                <p className="text-sm font-semibold">Ministerio de Trabajo</p>
-                <p className="text-xs text-blue-100">y Promoción del Empleo</p>
+                <div className="text-sm font-bold text-red-600"><Image src="/LogoMTPE.png" alt="Logo MTPE" width={250} height={400} /></div>
               </div>
             </div>
             <h1 className="text-2xl font-bold">Chatbot de Soporte</h1>
@@ -142,17 +139,9 @@ const ChatbotSoporte: React.FC = () => {
             <div className="flex flex-col items-center justify-center">
               <div className="mb-8 transform hover:scale-105 transition-transform duration-300">
                 <div className="w-48 h-48 relative">
-                  {/* Avatar mejorado */}
+                  {/* Avatar */}
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-                    <span className="text-7xl">👩‍💼</span>
-                  </div>
-                  {/* Burbuja de chat */}
-                  <div className="absolute -top-2 -right-4 bg-blue-200 rounded-full px-4 py-2 shadow-md">
-                    <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
-                    </div>
+                    <Image src="/asistente.png" alt="Asistente Virtual" width={500} height={500} />
                   </div>
                 </div>
               </div>
@@ -174,7 +163,7 @@ const ChatbotSoporte: React.FC = () => {
                 <Shield className="text-emerald-600" size={24} />
                 <div>
                   <p className="font-semibold text-emerald-900 text-sm">
-                    Atención disponible las 24<br />horas del día
+                    Atención disponible las 24 horas del día
                   </p>
                 </div>
               </div>
