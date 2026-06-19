@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { Section } from "@/app/dashboard/page";
@@ -18,6 +19,7 @@ import {
   Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { getIncidentesCount, getSolucionadosCount, getCurrentUser } from "@/lib/supabase";
 
 interface AppSidebarProps {
   activeSection: Section;
@@ -32,18 +34,59 @@ interface NavItem {
   badgeColor?: "red" | "yellow" | "green";
 }
 
-const favorites: NavItem[] = [
-  { id: "incidents", label: "Active Incidents", icon: AlertTriangle },
-  { id: "deployments", label: "Recent Deploys", icon: Rocket },
-];
-
-const mainMenu: NavItem[] = [
-  { id: "overview", label: "Dashboard", icon: LayoutDashboard },
-  { id: "incidents", label: "Incidentes", icon: AlertTriangle, badge: 3, badgeColor: "red" },
-  { id: "deployments", label: "Solucionados", icon: MessageCircleCheck, badge: 8 },
-];
+interface UserData {
+  nombre: string;
+  apellido: string;
+  email: string;
+  initials: string;
+}
 
 export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) {
+  const [incidentes, setIncidentes] = useState(0);
+  const [solucionados, setSolucionados] = useState(0);
+  const [usuario, setUsuario] = useState<UserData>({
+    nombre: "Usuario",
+    apellido: "",
+    email: "usuario@example.com",
+    initials: "US",
+  });
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    const cargarDatos = async () => {
+      setCargando(true);
+      const [incCount, solCount, userData] = await Promise.all([
+        getIncidentesCount(),
+        getSolucionadosCount(),
+        getCurrentUser(),
+      ]);
+      setIncidentes(incCount);
+      setSolucionados(solCount);
+      setUsuario(userData);
+      setCargando(false);
+    };
+
+    cargarDatos();
+  }, []);
+
+  const mainMenu: NavItem[] = [
+    { id: "overview", label: "Dashboard", icon: LayoutDashboard },
+    { 
+      id: "incidents", 
+      label: "Incidentes", 
+      icon: AlertTriangle, 
+      badge: incidentes, 
+      badgeColor: "red" 
+    },
+    { 
+      id: "deployments", 
+      label: "Solucionados", 
+      icon: MessageCircleCheck, 
+      badge: solucionados,
+      badgeColor: "green"
+    },
+  ];
+
   return (
     <aside className="w-[260px] h-screen bg-card border-r border-border flex flex-col shrink-0">
       {/* Logo */}
@@ -79,11 +122,13 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
         {/* User Profile */}
         <div className="flex items-center gap-3 px-2 py-3 rounded-xl hover:bg-muted/60 transition-colors cursor-pointer">
           <div className="w-9 h-9 rounded-full bg-chart-1/20 flex items-center justify-center">
-            <span className="text-chart-1 text-sm font-medium">JD</span>
+            <span className="text-chart-1 text-sm font-medium">{usuario.initials}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">John Doe</p>
-            <p className="text-xs text-muted-foreground truncate">SRE Lead</p>
+            <p className="text-sm font-medium text-foreground truncate">
+              {usuario.nombre} {usuario.apellido}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">{usuario.email}</p>
           </div>
           <button 
             type="button"
@@ -127,7 +172,7 @@ function NavButton({ item, isActive, onClick }: NavButtonProps) {
     >
       <Icon className="w-[18px] h-[18px] shrink-0" />
       <span className="flex-1 text-left">{item.label}</span>
-      {item.badge && (
+      {item.badge !== undefined && (
         <span
           className={cn(
             "text-xs font-medium px-2 py-0.5 rounded-full",

@@ -212,11 +212,11 @@ ${data.caso.solucion}
       });
 
       if (resuelto) {
-        // Caso resuelto
+        // Caso resuelto - mensaje de despedida final
         const closeMessage: Message = {
           id: Date.now().toString() + '-close',
           role: 'assistant',
-          content: 'Perfecto. Gracias por utilizar el Chatbot de Soporte MTPE. ¿Hay algo más en lo que pueda ayudarte?',
+          content: 'Perfecto. Gracias por utilizar el Chatbot de Soporte MTPE. Si tienes otra duda, puedes iniciar una nueva conversación haciendo clic en "Nueva Conversación".',
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, closeMessage]);
@@ -430,7 +430,7 @@ ${data.caso.solucion}
           <div ref={messagesEndRef} />
         </div>
 
-        {chatStep !== 'feedback' && (
+        {chatStep === 'describe' && (
           <div className="bg-white border-t border-gray-200 p-6 shadow-lg">
             <div className="flex gap-3">
               <input
