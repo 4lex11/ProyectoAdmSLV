@@ -36,7 +36,9 @@ interface NavItem {
 
 interface UserData {
   nombre: string;
-  apellido: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+  nombreCompleto: string;
   email: string;
   initials: string;
 }
@@ -46,7 +48,9 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
   const [solucionados, setSolucionados] = useState(0);
   const [usuario, setUsuario] = useState<UserData>({
     nombre: "Usuario",
-    apellido: "",
+    apellidoPaterno: "",
+    apellidoMaterno: "",
+    nombreCompleto: "Usuario",
     email: "usuario@example.com",
     initials: "US",
   });
@@ -126,7 +130,7 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate">
-              {usuario.nombre} {usuario.apellido}
+              {usuario.nombreCompleto}
             </p>
             <p className="text-xs text-muted-foreground truncate">{usuario.email}</p>
           </div>

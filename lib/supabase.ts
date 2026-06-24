@@ -5,6 +5,7 @@ export const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+// ============= INTERFACES =============
 export interface CasoComun {
   id_caso: number;
   sistema: string;
@@ -17,6 +18,135 @@ export interface CasoComun {
   fecha_registro: string;
 }
 
+export interface Usuario {
+  id: number;
+  nombre: string;
+  apellido_paterno: string;
+  apellido_materno: string;
+  gmail: string;
+}
+
+// ============= USUARIOS =============
+
+export async function getCurrentUser() {
+  try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user?.email) {
+      return {
+        id: null,
+        nombre: "Sin sesión",
+        apellidoPaterno: "",
+        apellidoMaterno: "",
+        nombreCompleto: "Sin sesión",
+        email: "",
+        initials: "SS",
+      };
+    }
+
+    // Leer desde tabla usuarios por gmail
+    const { data, error } = await supabase
+      .from("usuarios")
+      .select("id, nombre, apellido_paterno, apellido_materno, gmail")
+      .eq("gmail", user.email);
+
+    if (error || !data || data.length === 0) {
+      console.warn("⚠️ Usuario no encontrado en tabla usuarios:", user.email);
+      // Fallback: usar email como nombre
+      const fallbackNombre = user.email.split("@")[0];
+      return {
+        id: null,
+        nombre: fallbackNombre,
+        apellidoPaterno: "",
+        apellidoMaterno: "",
+        nombreCompleto: fallbackNombre,
+        email: user.email,
+        initials: fallbackNombre[0].toUpperCase() + "U",
+      };
+    }
+
+    const u = data[0];
+    const nombreCompleto = `${u.nombre} ${u.apellido_paterno} ${u.apellido_materno}`.trim();
+    const initials = `${(u.nombre ?? "U")[0]}${(u.apellido_paterno ?? "S")[0]}`.toUpperCase();
+
+    return {
+      id: u.id,
+      nombre: u.nombre ?? "",
+      apellidoPaterno: u.apellido_paterno ?? "",
+      apellidoMaterno: u.apellido_materno ?? "",
+      nombreCompleto,
+      email: u.gmail ?? "",
+      initials,
+    };
+  } catch (error) {
+    console.error("❌ Error getting current user:", error);
+    return {
+      id: null,
+      nombre: "Error",
+      apellidoPaterno: "",
+      apellidoMaterno: "",
+      nombreCompleto: "Error",
+      email: "",
+      initials: "ER",
+    };
+  }
+}
+
+export async function actualizarUsuario(
+  id: number,
+  nombre: string,
+  apellidoPaterno: string,
+  apellidoMaterno: string
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("usuarios")
+    .update({
+      nombre,
+      apellido_paterno: apellidoPaterno,
+      apellido_materno: apellidoMaterno,
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("❌ Error actualizando usuario:", error);
+    return false;
+  }
+  return true;
+}
+
+// Mantenida por compatibilidad con LoginPage
+export async function actualizarMetadatasAlLogin(
+  nombre: string,
+  apellidoPaterno: string,
+  apellidoMaterno: string
+) {
+  try {
+    const { data: { user }, error: getUserError } = await supabase.auth.getUser();
+    if (getUserError || !user?.email) return false;
+
+    const { error } = await supabase
+      .from("usuarios")
+      .update({
+        nombre,
+        apellido_paterno: apellidoPaterno,
+        apellido_materno: apellidoMaterno,
+      })
+      .eq("gmail", user.email);
+
+    if (error) {
+      console.error("❌ Error actualizando metadata:", error);
+      return false;
+    }
+
+    setTimeout(() => window.location.reload(), 500);
+    return true;
+  } catch (error) {
+    console.error("Error:", error);
+    return false;
+  }
+}
+
+// ============= BÚSQUEDA DE CASOS =============
 export async function buscarCaso(
   sistemaId: string,
   consulta: string
@@ -41,12 +171,10 @@ export async function buscarCaso(
 
     for (const caso of casos) {
       let score = 0;
-
       const problemaNormalizado = caso.problema.toLowerCase();
+
       for (const palabra of palabrasConsulta) {
-        if (problemaNormalizado.includes(palabra)) {
-          score += 10;
-        }
+        if (problemaNormalizado.includes(palabra)) score += 10;
       }
 
       const palabrasClave = caso.palabras_clave
@@ -56,15 +184,11 @@ export async function buscarCaso(
 
       for (const palabra of palabrasConsulta) {
         for (const pk of palabrasClave) {
-          if (pk.includes(palabra) && palabra.length > 2) {
-            score += 5;
-          }
+          if (pk.includes(palabra) && palabra.length > 2) score += 5;
         }
       }
 
-      if (
-        problemaNormalizado.includes(consultaNormalizada.substring(0, 20))
-      ) {
+      if (problemaNormalizado.includes(consultaNormalizada.substring(0, 20))) {
         score += 15;
       }
 
@@ -74,14 +198,9 @@ export async function buscarCaso(
       }
     }
 
-    if (mejorScore > 0) {
-      if (mejorCaso) {
-        console.log(
-          `✓ Caso encontrado con score: ${mejorScore}`,
-          mejorCaso.problema
-        );
-        return mejorCaso;
-      }
+    if (mejorScore > 0 && mejorCaso) {
+      console.log(`✓ Caso encontrado con score: ${mejorScore}`, mejorCaso.problema);
+      return mejorCaso;
     }
 
     console.log("✗ No se encontró caso con score suficiente");
@@ -92,6 +211,7 @@ export async function buscarCaso(
   }
 }
 
+// ============= GUARDAR REPORTE =============
 export async function guardarReporte(
   idCaso: number,
   sistema: string,
@@ -100,18 +220,16 @@ export async function guardarReporte(
   resuelto: boolean
 ): Promise<string | null> {
   try {
-    const idChat = `chat-${Date.now()}-${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
+    const idChat = `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     const { error } = await supabase.from("reporte_chat").insert([
       {
         id_chat: idChat,
         id_caso: idCaso,
-        sistema: sistema,
+        sistema,
         consulta_user: consultaUser,
         respuesta_bot: respuestaBot,
-        resuelto: resuelto,
+        resuelto,
       },
     ]);
 
@@ -123,13 +241,12 @@ export async function guardarReporte(
   }
 }
 
-// Obtener total de chats
+// ============= MÉTRICAS GENERALES =============
 export async function getTotalChats(): Promise<number> {
   try {
     const { count, error } = await supabase
       .from("reporte_chat")
       .select("*", { count: "exact", head: true });
-
     if (error) throw error;
     return count || 0;
   } catch (error) {
@@ -138,14 +255,12 @@ export async function getTotalChats(): Promise<number> {
   }
 }
 
-// Obtener chats resueltos
 export async function getChatsResueltos(): Promise<number> {
   try {
     const { count, error } = await supabase
       .from("reporte_chat")
       .select("*", { count: "exact", head: true })
       .eq("resuelto", true);
-
     if (error) throw error;
     return count || 0;
   } catch (error) {
@@ -154,14 +269,12 @@ export async function getChatsResueltos(): Promise<number> {
   }
 }
 
-// Obtener chats sin resolver
 export async function getChatsSinResolver(): Promise<number> {
   try {
     const { count, error } = await supabase
       .from("reporte_chat")
       .select("*", { count: "exact", head: true })
       .eq("resuelto", false);
-
     if (error) throw error;
     return count || 0;
   } catch (error) {
@@ -170,35 +283,24 @@ export async function getChatsSinResolver(): Promise<number> {
   }
 }
 
-// Obtener todas las métricas
 export async function getMetricas() {
   try {
     const totalChats = await getTotalChats();
     const chatsResueltos = await getChatsResueltos();
     const chatsSinResolver = await getChatsSinResolver();
+    const porcentajeResueltos =
+      totalChats > 0
+        ? ((chatsResueltos / totalChats) * 100).toFixed(2)
+        : "0";
 
-    const porcentajeResueltos = totalChats > 0 
-      ? ((chatsResueltos / totalChats) * 100).toFixed(2) 
-      : "0";
-
-    return {
-      totalChats,
-      chatsResueltos,
-      chatsSinResolver,
-      porcentajeResueltos,
-    };
+    return { totalChats, chatsResueltos, chatsSinResolver, porcentajeResueltos };
   } catch (error) {
     console.error("Error getting metrics:", error);
-    return {
-      totalChats: 0,
-      chatsResueltos: 0,
-      chatsSinResolver: 0,
-      porcentajeResueltos: "0",
-    };
+    return { totalChats: 0, chatsResueltos: 0, chatsSinResolver: 0, porcentajeResueltos: "0" };
   }
 }
 
-// Obtener chats por hora (últimas 24 horas)
+// ============= GRÁFICOS =============
 export async function getChatsPorHora() {
   try {
     const { data, error } = await supabase
@@ -208,34 +310,25 @@ export async function getChatsPorHora() {
 
     if (error) throw error;
 
-    // Agrupar por hora
     const horas: { [key: string]: number } = {};
     data?.forEach((chat: any) => {
       if (chat.created_at) {
-        const fecha = new Date(chat.created_at);
-        const hora = fecha.getHours();
+        const hora = new Date(chat.created_at).getHours();
         const horaKey = `${hora.toString().padStart(2, "0")}:00`;
         horas[horaKey] = (horas[horaKey] || 0) + 1;
       }
     });
 
-    // Convertir a formato para gráfico
-    const result = Array.from({ length: 24 }, (_, i) => {
+    return Array.from({ length: 24 }, (_, i) => {
       const horaKey = `${i.toString().padStart(2, "0")}:00`;
-      return {
-        time: horaKey,
-        chats: horas[horaKey] || 0,
-      };
+      return { time: horaKey, chats: horas[horaKey] || 0 };
     });
-
-    return result;
   } catch (error) {
     console.error("Error getting chats por hora:", error);
     return [];
   }
 }
 
-// Obtener chats no resueltos como "incidentes activos"
 export async function getIncidentesActivos() {
   try {
     const { data, error } = await supabase
@@ -251,8 +344,7 @@ export async function getIncidentesActivos() {
       data?.map((chat: any, index: number) => ({
         id: chat.id_chat,
         title: chat.consulta_user.substring(0, 50) + "...",
-        severity:
-          index === 0 ? "critical" : index === 1 ? "high" : "medium",
+        severity: index === 0 ? "critical" : index === 1 ? "high" : "medium",
         duration: calcularDuracion(chat.created_at),
         sistema: chat.sistema,
       })) || []
@@ -263,62 +355,46 @@ export async function getIncidentesActivos() {
   }
 }
 
-// Obtener estadísticas por sistema
 export async function getEstadisticasPorSistema() {
   try {
+    // Una sola query para todos los registros
+    const { data, error } = await supabase
+      .from("reporte_chat")
+      .select("sistema, resuelto");
+
+    if (error) throw error;
+
     const sistemas = ["SVL", "RETCC", "REMYPE", "RENOCC"];
-    const result = [];
+    const map: Record<string, { total: number; resueltos: number }> = {};
+    sistemas.forEach((s) => (map[s] = { total: 0, resueltos: 0 }));
 
-    for (const sistema of sistemas) {
-      const { count: total, error: errorTotal } = await supabase
-        .from("reporte_chat")
-        .select("*", { count: "exact", head: true })
-        .eq("sistema", sistema);
-
-      const { count: resueltos, error: errorResueltos } = await supabase
-        .from("reporte_chat")
-        .select("*", { count: "exact", head: true })
-        .eq("sistema", sistema)
-        .eq("resuelto", true);
-
-      if (!errorTotal && !errorResueltos) {
-        const porcentaje =
-          total && total > 0 ? ((resueltos || 0) / total) * 100 : 0;
-        result.push({
-          service: sistema,
-          p50: Math.floor((total || 0) * 0.1),
-          p95: Math.floor((total || 0) * 0.5),
-          p99: Math.floor((resueltos || 0)),
-        });
+    data?.forEach((row: any) => {
+      const key = row.sistema?.toUpperCase();
+      if (map[key]) {
+        map[key].total++;
+        if (row.resuelto) map[key].resueltos++;
       }
-    }
+    });
 
-    return result;
+    return sistemas.map((s) => ({
+      service: s,
+      total: map[s].total,
+      resueltos: map[s].resueltos,
+      sinResolver: map[s].total - map[s].resueltos,
+    }));
   } catch (error) {
     console.error("Error getting estadísticas por sistema:", error);
     return [];
   }
 }
 
-// Función auxiliar para calcular duración
-function calcularDuracion(fecha: string): string {
-  const ahora = new Date();
-  const creado = new Date(fecha);
-  const diff = Math.floor((ahora.getTime() - creado.getTime()) / 1000);
-
-  if (diff < 60) return `${diff}s`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-  return `${Math.floor(diff / 3600)}h`;
-}
-
-// Obtener conteo de chats sin resolver (incidentes)
+// ============= SIDEBAR =============
 export async function getIncidentesCount(): Promise<number> {
   try {
     const { count, error } = await supabase
       .from("reporte_chat")
       .select("*", { count: "exact", head: true })
       .eq("resuelto", false);
-
     if (error) throw error;
     return count || 0;
   } catch (error) {
@@ -327,14 +403,12 @@ export async function getIncidentesCount(): Promise<number> {
   }
 }
 
-// Obtener conteo de chats resueltos (solucionados)
 export async function getSolucionadosCount(): Promise<number> {
   try {
     const { count, error } = await supabase
       .from("reporte_chat")
       .select("*", { count: "exact", head: true })
       .eq("resuelto", true);
-
     if (error) throw error;
     return count || 0;
   } catch (error) {
@@ -343,52 +417,10 @@ export async function getSolucionadosCount(): Promise<number> {
   }
 }
 
-// Obtener información del usuario (si tienes tabla de usuarios)
-// Cambia esto según tu estructura de usuarios
-export async function getCurrentUser() {
-  try {
-    // Opción 1: Si usas Supabase Auth
-    const { data: { user }, error } = await supabase.auth.getUser();
-    
-    if (user) {
-      return {
-        nombre: user.user_metadata?.nombre || "Usuario",
-        apellido: user.user_metadata?.apellido || "",
-        email: user.email || "",
-        initials: `${(user.user_metadata?.nombre || "U")[0]}${(user.user_metadata?.apellido || "S")[0]}`,
-      };
-    }
-
-    // Opción 2: Si tienes tabla de usuarios
-    const { data } = await supabase
-      .from("usuarios")
-      .select("nombre, apellido, email")
-      .single();
-
-    if (data) {
-      return {
-        nombre: data.nombre || "Usuario",
-        apellido: data.apellido || "",
-        email: data.email || "",
-        initials: `${(data.nombre || "U")[0]}${(data.apellido || "S")[0]}`.toUpperCase(),
-      };
-    }
-
-    // Fallback
-    return {
-      nombre: "Usuario",
-      apellido: "",
-      email: "user@example.com",
-      initials: "US",
-    };
-  } catch (error) {
-    console.error("Error getting current user:", error);
-    return {
-      nombre: "Usuario",
-      apellido: "",
-      email: "user@example.com",
-      initials: "US",
-    };
-  }
+// ============= HELPERS =============
+function calcularDuracion(fecha: string): string {
+  const diff = Math.floor((Date.now() - new Date(fecha).getTime()) / 1000);
+  if (diff < 60) return `${diff}s`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  return `${Math.floor(diff / 3600)}h`;
 }
-

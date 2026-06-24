@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import type { Section } from "@/app/dashboard/page";
 import { OverviewContent } from "./content/overview-content";
 import { IncidentsContent } from "./content/incidents-content";
@@ -11,8 +12,10 @@ import { OncallContent } from "./content/oncall-content";
 import { ServicesContent } from "./content/services-content";
 import { PostmortemsContent } from "./content/postmortems-content";
 import { SettingsContent } from "./content/settings-content";
-import { Bell, Calendar, RefreshCw, Plus, AlertCircle } from "lucide-react";
+import { Bell, Calendar, RefreshCw, Plus, AlertCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
+import { useState } from "react";
 
 interface MainContentProps {
   activeSection: Section;
@@ -62,7 +65,31 @@ const sectionConfig: Record<Section, { title: string; subtitle: string }> = {
 };
 
 export function MainContent({ activeSection }: MainContentProps) {
+  const router = useRouter();
+  const [cargando, setCargando] = useState(false);
+
   const config = sectionConfig[activeSection];
+
+  const handleLogout = async () => {
+    try {
+      setCargando(true);
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Error al cerrar sesión:", error);
+        alert("Error al cerrar sesión");
+        return;
+      }
+
+      // Redirigir a login
+      router.push("/login");
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Ocurrió un error");
+    } finally {
+      setCargando(false);
+    }
+  };
 
   const renderContent = () => {
     switch (activeSection) {
@@ -98,10 +125,15 @@ export function MainContent({ activeSection }: MainContentProps) {
         <div></div>
 
         <div className="flex items-center gap-3">
-          {/* Primary Action */}
-          <Button size="sm" className="gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground">
-            <AlertCircle className="w-4 h-4" />
-            <span>Cerrar Sesion</span>
+          {/* Logout Button */}
+          <Button 
+            size="sm" 
+            className="gap-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            onClick={handleLogout}
+            disabled={cargando}
+          >
+            <LogOut className="w-4 h-4" />
+            <span>{cargando ? "Cerrando..." : "Cerrar Sesión"}</span>
           </Button>
         </div>
       </header>
